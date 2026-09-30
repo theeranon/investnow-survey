@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans Thai Looped', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+html,
+body {
+  font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans Thai Looped', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+optgroup,
+select,
+textarea,
+span,
+p,
+h1,
+h2,
+h3,
+h4,
+label {
+  font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans Thai Looped', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
