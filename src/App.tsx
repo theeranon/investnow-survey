@@ -13,14 +13,16 @@ import { initAuth, googleSignIn, logout, getAccessToken } from './services/fireb
 import { appendSurveyRow } from './services/googleSheets';
 import { getWebhookUrl, submitViaWebhook } from './services/sheetWebhook';
 import { submitToNetlifyForms } from './services/netlifyForms';
-import { Shield, Lock } from 'lucide-react';
 
 const STORAGE_KEY_RESPONSES = 'executive_survey_responses_v3';
 const STORAGE_KEY_SHEET_ID = 'executive_survey_sheet_id_v3';
 const STORAGE_KEY_SHEET_URL = 'executive_survey_sheet_url_v3';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'form' | 'success' | 'settings'>('form');
+  // The admin screen has no visible entry point; open it with the #admin hash.
+  const [currentView, setCurrentView] = useState<'form' | 'success' | 'settings'>(() =>
+    window.location.hash === '#admin' ? 'settings' : 'form'
+  );
 
   const [responses, setResponses] = useState<SurveyResponse[]>(() => {
     try {
@@ -191,31 +193,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Discreet Footer with hidden Admin/Settings entry */}
-      <footer className="py-8 px-4 text-center text-xs text-[#64748b] relative z-10 border-t border-[#1e293b]/40">
-        <div className="max-w-2xl mx-auto flex items-center justify-center gap-3">
-          <span className="flex items-center gap-1.5 text-[#94a3b8] font-light">
-            <Shield className="w-3.5 h-3.5 text-[#d4af37]" />
-            <span>Executive Wealth Masterclass · Confidential & Proprietary</span>
-          </span>
-          <span className="text-[#334155]">·</span>
-          <button
-            type="button"
-            onClick={() =>
-              setCurrentView((prev) => (prev === 'settings' ? 'form' : 'settings'))
-            }
-            className="text-[#94a3b8] hover:text-[#d4af37] inline-flex items-center gap-1 transition-colors focus:outline-none"
-            title="ตั้งค่าและจัดการข้อมูล Google Sheets สำหรับผู้ดูแลระบบ"
-          >
-            <Lock className="w-3 h-3" />
-            <span>
-              {currentView === 'settings'
-                ? 'กลับสู่แบบฟอร์ม'
-                : 'ตั้งค่า Google Sheets (ผู้ดูแล)'}
-            </span>
-          </button>
-        </div>
-      </footer>
     </div>
   );
 }

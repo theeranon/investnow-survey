@@ -62,13 +62,14 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
     if (errors.q5) setErrors((prev) => ({ ...prev, q5: '' }));
   };
 
+  const exclusiveDrinks = LUXURY_DRINKS.filter((d) => d.exclusive).map((d) => d.title);
+
   const toggleDrink = (title: string) => {
-    const isNone = title.includes('ไม่มีแอลกอฮอล์') || title.includes('ไม่ดื่ม');
-    if (isNone) {
+    if (exclusiveDrinks.includes(title)) {
       setSelectedDrinks((prev) => (prev.includes(title) ? [] : [title]));
     } else {
       setSelectedDrinks((prev) => {
-        const filtered = prev.filter((d) => !d.includes('ไม่มีแอลกอฮอล์') && !d.includes('ไม่ดื่ม'));
+        const filtered = prev.filter((d) => !exclusiveDrinks.includes(d));
         return filtered.includes(title) ? filtered.filter((i) => i !== title) : [...filtered, title];
       });
     }
@@ -136,10 +137,10 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
       {/* Header Card */}
       <div className="border border-neutral-800 bg-[#0b1424] rounded-2xl p-6 sm:p-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-          แบบสำรวจเป้าหมายและสไตล์การลงทุน
+          InvestNow&trade; Circle
         </h1>
         <p className="text-sm text-neutral-400 mt-1">
-          Executive Wealth Portfolio Survey
+          แบบสำรวจเป้าหมายและสไตล์การลงทุน
         </p>
 
         {/* Clean, Tasteful Inputs (No loud containers) */}
