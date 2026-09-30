@@ -11,6 +11,7 @@ import { AdminSettings } from './components/AdminSettings';
 import { SurveyResponse } from './types/survey';
 import { initAuth, googleSignIn, logout, getAccessToken } from './services/firebaseAuth';
 import { appendSurveyRow } from './services/googleSheets';
+import { getWebhookUrl, submitViaWebhook } from './services/sheetWebhook';
 import { Shield, Lock } from 'lucide-react';
 
 const STORAGE_KEY_RESPONSES = 'executive_survey_responses_v3';
@@ -45,19 +46,15 @@ export default function App() {
 
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Null means "reached the sheet"; a string is shown to the respondent as a warning.
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Initialize Firebase Auth
   useEffect(() => {
-    const unsubscribe = initAuth(
-      (currentUser, token) => {
-        setUser(currentUser);
-        setAccessToken(token);
-      },
-      () => {
-        setUser(null);
-        setAccessToken(null);
-      }
-    );
+    const unsubscribe = initAuth((currentUser, token) => {
+      setUser(currentUser);
+      setAccessToken(token);
+    });
     return () => unsubscribe();
   }, []);
 
@@ -100,15 +97,35 @@ export default function App() {
 
   const handleFormSubmit = async (newResponse: SurveyResponse) => {
     setIsSubmitting(true);
+    setSyncError(null);
 
-    // Save to Google Sheet if connected
+    // The webhook is the only path that works for public respondents, so it is
+    // tried first. The OAuth path is the fallback for an admin who has signed in
+    // and linked a sheet in this tab.
     const currentToken = accessToken || (await getAccessToken());
-    if (currentToken && spreadsheetId) {
+    const hasWebhook = Boolean(getWebhookUrl());
+    const canUseOAuth = Boolean(currentToken && spreadsheetId);
+
+    if (hasWebhook) {
       try {
-        await appendSurveyRow(currentToken, spreadsheetId, newResponse);
+        await submitViaWebhook(newResponse);
+      } catch (err) {
+        console.error('Failed to submit via webhook:', err);
+        setSyncError(
+          err instanceof Error ? err.message : 'ไม่สามารถส่งข้อมูลไปยัง Google Sheet ได้'
+        );
+      }
+    } else if (canUseOAuth) {
+      try {
+        await appendSurveyRow(currentToken!, spreadsheetId!, newResponse);
       } catch (err) {
         console.error('Failed to append to Google Sheet:', err);
+        setSyncError(
+          err instanceof Error ? err.message : 'ไม่สามารถบันทึกลง Google Sheet ได้'
+        );
       }
+    } else {
+      setSyncError('ยังไม่ได้เชื่อมต่อ Google Sheet — คำตอบถูกเก็บไว้ในเครื่องนี้เท่านั้น');
     }
 
     setResponses((prev) => [newResponse, ...prev]);
@@ -146,6 +163,7 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             spreadsheetUrl={spreadsheetUrl}
+            syncError={syncError}
           />
         )}
 

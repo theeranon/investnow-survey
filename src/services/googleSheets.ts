@@ -1,15 +1,9 @@
-import { SurveyResponse } from '../types/survey';
+import { SurveyResponse, SURVEY_COLUMNS, toSurveyRow } from '../types/survey';
 
-const SHEET_HEADERS = [
-  'ประทับเวลา',
-  '1. คาดหวังอะไรบ้าง',
-  '2. เรียงลำดับความคาดหวัง',
-  '3. สินทรัพย์ที่สนใจหรืออยากให้มีในพอร์ต',
-  '4. ทำไมถึงสนใจกลุ่มสินทรัพย์เหล่านี้',
-  '5. ปัจจุบันใช้ App อะไรลงทุน',
-  '6. มีอะไรอยากจะบอกไหม อยากให้เราซัพพอร์ตเรื่องอะไร',
-  '7. Survey แอลกอฮอล์',
-];
+const SHEET_NAME = 'การตอบแบบฟอร์ม 1';
+
+/** 'A'..'Z' for the declared column count, so adding a column cannot desync the range. */
+const LAST_COLUMN = String.fromCharCode('A'.charCodeAt(0) + SURVEY_COLUMNS.length - 1);
 
 export async function createSurveySpreadsheet(
   accessToken: string,
@@ -30,7 +24,7 @@ export async function createSurveySpreadsheet(
       sheets: [
         {
           properties: {
-            title: 'การตอบแบบฟอร์ม 1',
+            title: SHEET_NAME,
             gridProperties: {
               frozenRowCount: 1,
             },
@@ -41,7 +35,7 @@ export async function createSurveySpreadsheet(
               startColumn: 0,
               rowData: [
                 {
-                  values: SHEET_HEADERS.map((header) => ({
+                  values: SURVEY_COLUMNS.map((header) => ({
                     userEnteredValue: { stringValue: header },
                     userEnteredFormat: {
                       textFormat: { bold: true },
@@ -68,48 +62,16 @@ export async function createSurveySpreadsheet(
   return { id: spreadsheetId, url: spreadsheetUrl };
 }
 
-export async function appendSurveyRow(
+async function appendValues(
   accessToken: string,
   spreadsheetId: string,
-  response: SurveyResponse
-): Promise<boolean> {
-  const range = "'การตอบแบบฟอร์ม 1'!A:H";
-
-  const rankedStr =
-    response.expectationsRanking && response.expectationsRanking.length > 0
-      ? response.expectationsRanking.map((item, idx) => `${idx + 1}. ${item}`).join(' > ')
-      : response.expectations.join(', ');
-
-  const assetsCombined = [
-    ...response.assets,
-    ...(response.customAsset ? [`อื่นๆ: ${response.customAsset}`] : []),
-  ].join(', ');
-
-  const appsCombined = [
-    ...response.apps,
-    ...(response.customApp ? [`อื่นๆ: ${response.customApp}`] : []),
-  ].join(', ');
-
-  const drinksCombined = [
-    ...response.drinks,
-    ...(response.customDrink ? [`อื่นๆ: ${response.customDrink}`] : []),
-  ].join(', ');
-
-  const rowValues = [
-    new Date(response.timestamp).toLocaleString('th-TH'),
-    response.expectations.join(', '),
-    rankedStr,
-    assetsCombined,
-    response.assetReason || '',
-    appsCombined,
-    response.supportMessage || '',
-    drinksCombined,
-  ];
-
-  const res = await fetch(
+  range: string,
+  rowValues: string[]
+): Promise<Response> {
+  return fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(
       range
-    )}:append?valueInputOption=USER_ENTERED`,
+    )}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     {
       method: 'POST',
       headers: {
@@ -123,31 +85,33 @@ export async function appendSurveyRow(
       }),
     }
   );
+}
 
-  if (!res.ok) {
-    // If sheet name doesn't match, try sheet 1 without specific title
-    const fallbackRange = 'A:H';
-    const fallbackRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(
-        fallbackRange
-      )}:append?valueInputOption=USER_ENTERED`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          range: fallbackRange,
-          majorDimension: 'ROWS',
-          values: [rowValues],
-        }),
-      }
-    );
-    if (!fallbackRes.ok) {
-      const errorData = await fallbackRes.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `Failed to append row (${fallbackRes.status})`);
-    }
+export async function appendSurveyRow(
+  accessToken: string,
+  spreadsheetId: string,
+  response: SurveyResponse
+): Promise<boolean> {
+  const rowValues = toSurveyRow(response);
+  const namedRange = `'${SHEET_NAME}'!A:${LAST_COLUMN}`;
+
+  const res = await appendValues(accessToken, spreadsheetId, namedRange, rowValues);
+  if (res.ok) return true;
+
+  const primaryError = await res.json().catch(() => ({}));
+  const primaryMessage = primaryError.error?.message || `Failed to append row (${res.status})`;
+
+  // A 400 here means the tab name does not exist in this spreadsheet (e.g. the admin
+  // linked a sheet they created by hand), so retry against the first tab. Any other
+  // status is an auth or permission problem that a retry cannot fix.
+  if (res.status !== 400) {
+    throw new Error(primaryMessage);
+  }
+
+  const fallbackRes = await appendValues(accessToken, spreadsheetId, `A:${LAST_COLUMN}`, rowValues);
+  if (!fallbackRes.ok) {
+    const fallbackError = await fallbackRes.json().catch(() => ({}));
+    throw new Error(fallbackError.error?.message || primaryMessage);
   }
 
   return true;

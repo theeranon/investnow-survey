@@ -66,13 +66,12 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
     const isNone = title.includes('ไม่มีแอลกอฮอล์') || title.includes('ไม่ดื่ม');
     if (isNone) {
       setSelectedDrinks((prev) => (prev.includes(title) ? [] : [title]));
-      return;
+    } else {
+      setSelectedDrinks((prev) => {
+        const filtered = prev.filter((d) => !d.includes('ไม่มีแอลกอฮอล์') && !d.includes('ไม่ดื่ม'));
+        return filtered.includes(title) ? filtered.filter((i) => i !== title) : [...filtered, title];
+      });
     }
-
-    setSelectedDrinks((prev) => {
-      const filtered = prev.filter((d) => !d.includes('ไม่มีแอลกอฮอล์') && !d.includes('ไม่ดื่ม'));
-      return filtered.includes(title) ? filtered.filter((i) => i !== title) : [...filtered, title];
-    });
     if (errors.q7) setErrors((prev) => ({ ...prev, q7: '' }));
   };
 
@@ -95,14 +94,17 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
-      const firstErrorId = Object.keys(errors)[0] || 'card-q1';
-      const el = document.getElementById(firstErrorId);
+    const newErrors = validate();
+    const failedKeys = Object.keys(newErrors);
+    if (failedKeys.length > 0) {
+      // Card ids are prefixed, and the freshly computed errors are used because
+      // the `errors` state has not re-rendered yet at this point.
+      const el = document.getElementById(`card-${failedKeys[0]}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -112,6 +114,8 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
     const response: SurveyResponse = {
       id: `resp-${Date.now()}`,
       timestamp: new Date().toISOString(),
+      name: name.trim(),
+      contact: contact.trim(),
       expectations: selectedExpectations,
       expectationsRanking: rankedExpectations,
       assets: selectedAssets,

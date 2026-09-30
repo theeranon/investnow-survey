@@ -1,7 +1,14 @@
 import { FC, useState } from 'react';
 import { User } from 'firebase/auth';
-import { SurveyResponse } from '../types/survey';
+import { SurveyResponse, SURVEY_COLUMNS, toSurveyRow } from '../types/survey';
 import { createSurveySpreadsheet, checkSpreadsheetAccess, appendSurveyRow } from '../services/googleSheets';
+import {
+  getWebhookUrl,
+  getEnvWebhookUrl,
+  setWebhookUrl,
+  isValidWebhookUrl,
+  testWebhook,
+} from '../services/sheetWebhook';
 import {
   ExternalLink,
   PlusCircle,
@@ -12,6 +19,7 @@ import {
   AlertCircle,
   Trash2,
   FileSpreadsheet,
+  Webhook,
 } from 'lucide-react';
 
 interface AdminSettingsProps {
@@ -47,6 +55,10 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
   const [isValidating, setIsValidating] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [webhookInput, setWebhookInput] = useState(() => getWebhookUrl());
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const activeWebhook = getWebhookUrl();
+  const envWebhook = getEnvWebhookUrl();
 
   const handleCreateSheet = async () => {
     if (!accessToken) return;
@@ -86,53 +98,93 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
     }
   };
 
+  const handleSaveWebhook = () => {
+    const clean = webhookInput.trim();
+    if (clean && !isValidWebhookUrl(clean)) {
+      setMessage({ type: 'error', text: 'Webhook URL ต้องเป็น https:// ที่ถูกต้อง' });
+      return;
+    }
+    setWebhookUrl(clean);
+    setMessage({
+      type: 'success',
+      text: clean
+        ? 'บันทึก Webhook URL แล้ว (มีผลกับเบราว์เซอร์นี้ — ตั้งค่า VITE_SHEET_WEBHOOK_URL ใน Netlify เพื่อให้มีผลกับผู้ตอบทุกคน)'
+        : 'ล้างค่า Webhook URL ในเบราว์เซอร์นี้แล้ว',
+    });
+  };
+
+  const handleTestWebhook = async () => {
+    const clean = webhookInput.trim();
+    if (!isValidWebhookUrl(clean)) {
+      setMessage({ type: 'error', text: 'กรุณาวาง Webhook URL (https://) ให้ถูกต้องก่อนทดสอบ' });
+      return;
+    }
+    setIsTestingWebhook(true);
+    setMessage(null);
+    try {
+      await testWebhook(clean);
+      setMessage({ type: 'success', text: 'ทดสอบสำเร็จ — Apps Script ตอบกลับปกติ พร้อมรับคำตอบแล้ว' });
+    } catch (e: any) {
+      setMessage({ type: 'error', text: e.message || 'ทดสอบ Webhook ไม่สำเร็จ' });
+    } finally {
+      setIsTestingWebhook(false);
+    }
+  };
+
   const handleSyncAll = async () => {
     if (!accessToken || !spreadsheetId || responses.length === 0) return;
     setIsSyncingAll(true);
     setMessage(null);
-    try {
-      let count = 0;
-      for (const r of responses) {
+
+    // Oldest first, so the sheet ends up in chronological order.
+    const ordered = [...responses].reverse();
+    let synced = 0;
+    let lastError = '';
+
+    for (const r of ordered) {
+      try {
         await appendSurveyRow(accessToken, spreadsheetId, r);
-        count++;
+        synced++;
+      } catch (e: any) {
+        lastError = e?.message || 'unknown error';
       }
-      setMessage({ type: 'success', text: `ซิงค์คำตอบ ${count} รายการลง Google Sheet สำเร็จแล้ว` });
-    } catch (e: any) {
-      setMessage({ type: 'error', text: e.message || 'เกิดข้อผิดพลาดในการซิงค์ข้อมูล' });
-    } finally {
-      setIsSyncingAll(false);
     }
+
+    const failed = ordered.length - synced;
+    setMessage(
+      failed === 0
+        ? { type: 'success', text: `ซิงค์คำตอบ ${synced} รายการลง Google Sheet สำเร็จแล้ว` }
+        : {
+            type: 'error',
+            text: `ซิงค์สำเร็จ ${synced} รายการ ไม่สำเร็จ ${failed} รายการ (${lastError})`,
+          }
+    );
+    setIsSyncingAll(false);
   };
 
   const exportCSV = () => {
     if (responses.length === 0) return;
-    const headers = [
-      'Timestamp',
-      '1. Expectations',
-      '2. Ranked Expectations',
-      '3. Assets',
-      '4. Asset Reason',
-      '5. Apps',
-      '6. Support Message',
-      '7. Drinks',
-    ];
-    const rows = responses.map((r) => [
-      `"${new Date(r.timestamp).toLocaleString('th-TH')}"`,
-      `"${r.expectations.join('; ')}"`,
-      `"${(r.expectationsRanking || []).join(' > ')}"`,
-      `"${[...r.assets, ...(r.customAsset ? [`อื่นๆ: ${r.customAsset}`] : [])].join('; ')}"`,
-      `"${(r.assetReason || '').replace(/"/g, '""')}"`,
-      `"${[...r.apps, ...(r.customApp ? [`อื่นๆ: ${r.customApp}`] : [])].join('; ')}"`,
-      `"${(r.supportMessage || '').replace(/"/g, '""')}"`,
-      `"${[...r.drinks, ...(r.customDrink ? [`อื่นๆ: ${r.customDrink}`] : [])].join('; ')}"`,
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+    // Quote every field and double any inner quote, so commas, quotes and
+    // newlines inside free-text answers cannot break the column alignment.
+    const escape = (value: string) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+    const csvContent =
+      '\uFEFF' +
+      [
+        SURVEY_COLUMNS.map(escape).join(','),
+        ...responses.map((r) => toSurveyRow(r).map(escape).join(',')),
+      ].join('\r\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `survey_responses_${Date.now()}.csv`;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -169,7 +221,77 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
         </div>
       )}
 
-      {/* 1. Google Sheets Integration Card */}
+      {/* 1. Webhook (works for every visitor — the primary path) */}
+      <div className="rounded-2xl border border-neutral-800 bg-[#0b1424] p-5 sm:p-7 space-y-4">
+        <div className="flex items-center gap-3 pb-4 border-b border-neutral-800">
+          <div className="w-9 h-9 rounded-lg bg-[#1a1333] text-[#c4b5fd] border border-[#4c3a8a] flex items-center justify-center shrink-0">
+            <Webhook className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white">
+              บันทึกคำตอบจากผู้ตอบทุกคน (แนะนำ)
+            </h3>
+            <p className="text-xs text-neutral-400">
+              ผ่าน Google Apps Script Web App — ผู้ตอบไม่ต้องล็อกอิน Google
+            </p>
+          </div>
+        </div>
+
+        {activeWebhook ? (
+          <div className="p-3 rounded-lg text-xs bg-emerald-950/50 text-emerald-300 border border-emerald-800/60 flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              เปิดใช้งานอยู่
+              {envWebhook && activeWebhook === envWebhook
+                ? ' (ตั้งค่าจาก Netlify env: VITE_SHEET_WEBHOOK_URL — มีผลกับผู้ตอบทุกคน)'
+                : ' (ตั้งค่าเฉพาะเบราว์เซอร์นี้)'}
+            </span>
+          </div>
+        ) : (
+          <div className="p-3 rounded-lg text-xs bg-amber-950/40 text-amber-300 border border-amber-800/60">
+            ยังไม่ได้ตั้งค่า — คำตอบของผู้ตอบทั่วไปจะถูกเก็บไว้ในเบราว์เซอร์ของเขาเท่านั้น ไม่ขึ้น Google Sheet
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-neutral-300 block">
+            Apps Script Web App URL
+          </label>
+          <input
+            type="url"
+            value={webhookInput}
+            onChange={(e) => setWebhookInput(e.target.value)}
+            placeholder="https://script.google.com/macros/s/.../exec"
+            className="w-full px-3 py-2 text-xs font-mono bg-[#070e1c] border border-neutral-700 focus:border-[#d4af37] rounded-lg text-white outline-none"
+          />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={handleTestWebhook}
+              disabled={isTestingWebhook || !webhookInput.trim()}
+              className="flex-1 px-4 py-2 text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {isTestingWebhook ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
+              <span>ทดสอบการเชื่อมต่อ</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveWebhook}
+              className="flex-1 px-4 py-2 text-xs font-semibold bg-emerald-900 hover:bg-emerald-800 text-emerald-200 border border-emerald-700 rounded-lg transition-colors"
+            >
+              บันทึก URL
+            </button>
+          </div>
+          <p className="text-[11px] text-neutral-500 leading-relaxed">
+            Deploy Apps Script เป็น Web App โดยตั้ง <span className="text-neutral-300">Execute as: Me</span> และ{' '}
+            <span className="text-neutral-300">Who has access: Anyone</span> — จากนั้นนำ URL ไปใส่เป็น
+            env var <span className="font-mono text-neutral-300">VITE_SHEET_WEBHOOK_URL</span> บน Netlify
+            เพื่อให้มีผลกับผู้ตอบทุกคน
+          </p>
+        </div>
+      </div>
+
+      {/* 2. Admin-only OAuth path (same browser session only) */}
       <div className="rounded-2xl border border-neutral-800 bg-[#0b1424] p-5 sm:p-7 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-800">
           <div className="flex items-center gap-3">
@@ -186,22 +308,25 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
             </div>
           </div>
 
-          {user ? (
-            <button
-              onClick={onDisconnectGoogle}
-              className="text-xs text-neutral-400 hover:text-rose-400 transition-colors"
-            >
-              ออกจากระบบ Google
-            </button>
-          ) : (
-            <button
-              onClick={onConnectGoogle}
-              disabled={isConnectingGoogle}
-              className="px-4 py-2 text-xs font-semibold bg-[#d4af37] text-neutral-950 rounded-lg hover:bg-[#e6c875] transition-all disabled:opacity-50"
-            >
-              {isConnectingGoogle ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google'}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {(!user || !accessToken) && (
+              <button
+                onClick={onConnectGoogle}
+                disabled={isConnectingGoogle}
+                className="px-4 py-2 text-xs font-semibold bg-[#d4af37] text-neutral-950 rounded-lg hover:bg-[#e6c875] transition-all disabled:opacity-50"
+              >
+                {isConnectingGoogle ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google'}
+              </button>
+            )}
+            {user && (
+              <button
+                onClick={onDisconnectGoogle}
+                className="text-xs text-neutral-400 hover:text-rose-400 transition-colors"
+              >
+                ออกจากระบบ Google
+              </button>
+            )}
+          </div>
         </div>
 
         {user ? (
@@ -209,6 +334,16 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
             <div className="text-xs text-neutral-300">
               บัญชี Google: <span className="font-semibold text-white">{user.email || user.displayName}</span>
             </div>
+
+            {!accessToken && (
+              <div className="p-3 rounded-lg text-xs bg-amber-950/40 text-amber-300 border border-amber-800/60 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  ยังล็อกอินอยู่ แต่สิทธิ์เข้าถึง Google Sheets หมดอายุเมื่อรีเฟรชหน้า
+                  กด &ldquo;เข้าสู่ระบบด้วย Google&rdquo; อีกครั้งเพื่อเชื่อมต่อใหม่
+                </span>
+              </div>
+            )}
 
             {spreadsheetId ? (
               <div className="p-4 rounded-xl bg-[#070e1c] border border-neutral-800 space-y-2.5">
@@ -310,7 +445,7 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
         )}
       </div>
 
-      {/* 2. Responses & Data Management */}
+      {/* 3. Responses & Data Management */}
       <div className="rounded-2xl border border-neutral-800 bg-[#0b1424] p-5 sm:p-7 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -351,6 +486,8 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
               <thead className="bg-[#070e1c] text-[#d4af37] border-b border-neutral-800">
                 <tr>
                   <th className="py-2.5 px-3 whitespace-nowrap">เวลา</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">ชื่อ</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">ติดต่อ</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">เป้าหมายอันดับ 1</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">สินทรัพย์ที่เลือก</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">App</th>
@@ -368,8 +505,14 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
                         minute: '2-digit',
                       })}
                     </td>
+                    <td className="py-2.5 px-3 text-neutral-200 whitespace-nowrap">
+                      {r.name || '-'}
+                    </td>
+                    <td className="py-2.5 px-3 text-neutral-300 whitespace-nowrap">
+                      {r.contact || '-'}
+                    </td>
                     <td className="py-2.5 px-3 text-white max-w-xs truncate font-medium">
-                      {r.expectationsRanking[0] || r.expectations[0] || '-'}
+                      {(r.expectationsRanking && r.expectationsRanking[0]) || r.expectations[0] || '-'}
                     </td>
                     <td className="py-2.5 px-3 text-neutral-300 max-w-xs truncate">
                       {r.assets.slice(0, 2).join(', ')}

@@ -23,21 +23,22 @@ SCOPES.forEach((scope) => provider.addScope(scope));
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 
+/**
+ * Google only hands out the Sheets access token as part of the sign-in popup
+ * result, and it is deliberately kept in memory rather than persisted. A page
+ * reload therefore restores the Firebase user but not the token, so the user is
+ * reported with a null token and the UI asks the admin to reconnect — dropping
+ * the user entirely here made the admin screen look signed out for no reason.
+ */
 export const initAuth = (
-  onAuthSuccess?: (user: User, token: string) => void,
-  onAuthFailure?: () => void
+  onAuthChange?: (user: User | null, token: string | null) => void
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
-    if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
-        if (onAuthFailure) onAuthFailure();
-      }
-    } else {
+    if (!user) {
       cachedAccessToken = null;
-      if (onAuthFailure) onAuthFailure();
     }
+    if (isSigningIn) return;
+    if (onAuthChange) onAuthChange(user, user ? cachedAccessToken : null);
   });
 };
 
