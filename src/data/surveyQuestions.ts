@@ -55,9 +55,13 @@ export const LUXURY_ASSETS: LuxuryOption[] = [
 ];
 
 export const LUXURY_APPS = [
-  'Webull',
-  'Dime!',
+  'Streaming (Settrade)',
   'InnovestX',
+  'Liberator',
+  'Dime!',
+  'Finnomena',
+  'แอปธนาคาร',
+  'Webull',
   'Binance',
 ];
 
