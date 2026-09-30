@@ -2,7 +2,18 @@
 
 แบบสำรวจเป้าหมายและสไตล์การลงทุน — React + Vite + Tailwind, deploy เป็น static site บน Netlify
 
-## การเชื่อมต่อ Google Sheet
+## ที่เก็บคำตอบ
+
+### Netlify Forms (ใช้งานจริงอยู่ตอนนี้)
+
+คำตอบทุกชุดถูกส่งเข้า Netlify Forms ในฟอร์มชื่อ `survey` — ไม่ต้องให้ผู้ตอบล็อกอิน
+และไม่ต้องถือ credential ของบริการภายนอก ดูข้อมูล / export CSV / ตั้งอีเมลแจ้งเตือนได้ที่
+Netlify → **Forms**
+
+ฟอร์ม static ที่ Netlify ใช้ detect อยู่ใน `index.html` (ซ่อนไว้จากผู้ใช้) และชื่อฟิลด์
+ต้องตรงกับ `FORM_FIELDS` ใน `src/services/netlifyForms.ts` เสมอ
+
+## การเชื่อมต่อ Google Sheet (ทางเสริม)
 
 แอปนี้เป็น static site ฉะนั้นการเขียนลง Google Sheet ต้องมีฝ่ายใดฝ่ายหนึ่งถือสิทธิ์ มี 2 เส้นทางในโค้ด:
 
