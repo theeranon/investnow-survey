@@ -12,6 +12,7 @@ import { SurveyResponse } from './types/survey';
 import { initAuth, googleSignIn, logout, getAccessToken } from './services/firebaseAuth';
 import { appendSurveyRow } from './services/googleSheets';
 import { getWebhookUrl, submitViaWebhook } from './services/sheetWebhook';
+import { submitToNetlifyForms } from './services/netlifyForms';
 import { Shield, Lock } from 'lucide-react';
 
 const STORAGE_KEY_RESPONSES = 'executive_survey_responses_v3';
@@ -99,33 +100,39 @@ export default function App() {
     setIsSubmitting(true);
     setSyncError(null);
 
-    // The webhook is the only path that works for public respondents, so it is
-    // tried first. The OAuth path is the fallback for an admin who has signed in
-    // and linked a sheet in this tab.
+    // Netlify Forms is the primary store: it needs no respondent sign-in and no
+    // third-party credentials, so it is the one path that always works in
+    // production. The Google Sheet paths run as best-effort extras on top.
     const currentToken = accessToken || (await getAccessToken());
     const hasWebhook = Boolean(getWebhookUrl());
     const canUseOAuth = Boolean(currentToken && spreadsheetId);
 
+    let stored = false;
+    try {
+      await submitToNetlifyForms(newResponse);
+      stored = true;
+    } catch (err) {
+      console.error('Failed to submit to Netlify Forms:', err);
+    }
+
     if (hasWebhook) {
       try {
         await submitViaWebhook(newResponse);
+        stored = true;
       } catch (err) {
         console.error('Failed to submit via webhook:', err);
-        setSyncError(
-          err instanceof Error ? err.message : 'ไม่สามารถส่งข้อมูลไปยัง Google Sheet ได้'
-        );
       }
     } else if (canUseOAuth) {
       try {
         await appendSurveyRow(currentToken!, spreadsheetId!, newResponse);
+        stored = true;
       } catch (err) {
         console.error('Failed to append to Google Sheet:', err);
-        setSyncError(
-          err instanceof Error ? err.message : 'ไม่สามารถบันทึกลง Google Sheet ได้'
-        );
       }
-    } else {
-      setSyncError('ยังไม่ได้เชื่อมต่อ Google Sheet — คำตอบถูกเก็บไว้ในเครื่องนี้เท่านั้น');
+    }
+
+    if (!stored) {
+      setSyncError('ส่งข้อมูลขึ้นเซิร์ฟเวอร์ไม่สำเร็จ คำตอบถูกเก็บไว้ในเครื่องนี้ก่อน');
     }
 
     setResponses((prev) => [newResponse, ...prev]);

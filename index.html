@@ -14,6 +14,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body class="bg-[#070b14] text-[#e8ecf4] antialiased selection:bg-[#d4af37]/30 selection:text-[#f3e5ab]">
+    <!--
+      Netlify detects this form at deploy time and creates the "survey" form.
+      It is hidden from respondents; the React app posts the same field names.
+      Keep these in sync with FORM_FIELDS in src/services/netlifyForms.ts.
+    -->
+    <form name="survey" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="survey" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="timestamp" />
+      <input type="text" name="name" />
+      <input type="text" name="contact" />
+      <textarea name="expectations"></textarea>
+      <textarea name="ranking"></textarea>
+      <textarea name="assets"></textarea>
+      <textarea name="asset_reason"></textarea>
+      <textarea name="apps"></textarea>
+      <textarea name="support_message"></textarea>
+      <textarea name="drinks"></textarea>
+    </form>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
