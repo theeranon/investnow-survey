@@ -19,39 +19,39 @@ export const LUXURY_EXPECTATIONS: LuxuryOption[] = [
   },
   {
     id: 'exp_income_no_risk',
-    title: 'กินดอกเบี้ย/ปันผลไปเรื่อยๆ ไม่เสี่ยงเลย',
+    title: 'รับดอกเบี้ยหรือปันผลไปเรื่อยๆ ไม่เสี่ยงเลย',
     subtitle: 'ขอกระแสเงินสดสม่ำเสมอ โดยไม่ต้องรับความเสี่ยงขาดทุน',
   },
   {
     id: 'exp_personal_portfolio',
     title: 'ค้นหาสูตรทำกำไร และจัดพอร์ตที่เหมาะกับตัวเอง',
-    subtitle: 'Personal Portfolio Balance — รู้ว่าอะไรใช่สำหรับเรา ไม่ใช่ลอกคนอื่น',
+    subtitle: 'รู้ว่าพอร์ตแบบไหนใช่สำหรับเรา ไม่ใช่ลอกคนอื่นมาทั้งดุ้น',
   },
   {
     id: 'exp_community',
     title: 'มี Community ที่ปรึกษา และคนช่วยคิด',
-    subtitle: 'มีเพื่อนร่วมทาง มีคนแลกเปลี่ยนมุมมอง ไม่ต้องตัดสินใจคนเดียว',
+    subtitle: 'มีเพื่อนร่วมทางและคนแลกเปลี่ยนมุมมอง ไม่ต้องตัดสินใจคนเดียว',
   },
   {
     id: 'exp_fun_together',
     title: 'ได้เจอกัน เล่นน้ำ ลงทะเล สนุกด้วยกัน',
-    subtitle: 'กิจกรรมและทริปของกลุ่ม ไม่ใช่แค่เรื่องลงทุนอย่างเดียว',
+    subtitle: 'ได้ร่วมกิจกรรมและไปทริปกับคนในกลุ่ม',
   },
 ];
 
 export const LUXURY_ASSETS: LuxuryOption[] = [
   { id: 'asset_us_stocks', title: 'หุ้นสหรัฐฯ (US Stocks)' },
   { id: 'asset_us_treasury', title: 'พันธบัตรรัฐบาลสหรัฐฯ (US Treasury)' },
-  { id: 'asset_index_funds', title: 'Index Funds (SET50 / NASDAQ)' },
+  { id: 'asset_index_funds', title: 'Index Funds เช่น SET50 และ NASDAQ' },
   { id: 'asset_etf_qqq', title: 'ETF (QQQ)' },
   { id: 'asset_btc', title: 'Bitcoin (BTC)' },
-  { id: 'asset_crypto', title: 'Crypto (เหรียญอื่นนอกจาก BTC)' },
+  { id: 'asset_crypto', title: 'Crypto เหรียญอื่นนอกจาก BTC' },
   { id: 'asset_gold', title: 'ทองคำ (Gold)' },
-  { id: 'asset_precious_metal', title: 'โลหะมีค่าอื่นๆ (เงิน, แพลทินัม ฯลฯ)' },
-  { id: 'asset_thai_stocks', title: 'หุ้นไทย (SET / mai)' },
+  { id: 'asset_precious_metal', title: 'โลหะมีค่าอื่นๆ เช่น เงินและแพลทินัม' },
+  { id: 'asset_thai_stocks', title: 'หุ้นไทย ทั้ง SET และ mai' },
   { id: 'asset_thai_funds', title: 'กองทุนรวมไทย' },
   { id: 'asset_fixed_deposit', title: 'เงินฝากประจำ' },
-  { id: 'asset_insurance', title: 'ประกันออมทรัพย์ / Unit Linked' },
+  { id: 'asset_insurance', title: 'ประกันออมทรัพย์และ Unit Linked' },
 ];
 
 export const LUXURY_APPS = [
@@ -70,5 +70,5 @@ export const LUXURY_DRINKS: LuxuryOption[] = [
   { id: 'drink_beer', title: 'เบียร์' },
   { id: 'drink_wine', title: 'ไวน์' },
   { id: 'drink_regency', title: 'Regency' },
-  { id: 'drink_whisky', title: 'Whisky / Cognac' },
+  { id: 'drink_whisky', title: 'Whisky และ Cognac' },
 ];

@@ -147,13 +147,13 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
         <div className="mt-6 pt-6 border-t border-neutral-800/80 space-y-4">
           <div>
             <label className="block text-sm font-medium text-neutral-300 mb-2">
-              ชื่อ–นามสกุล หรือชื่อเล่น
+              ชื่อ นามสกุล หรือชื่อเล่น
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ระบุชื่อ–นามสกุล หรือชื่อเล่น"
+              placeholder="ระบุชื่อ นามสกุล หรือชื่อเล่น"
               className="w-full px-4 py-3 text-base bg-[#070e1c] border border-neutral-700/80 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 rounded-xl text-white placeholder:text-neutral-500 outline-none transition-all"
             />
           </div>
@@ -183,7 +183,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white">
-              1. คาดหวังอะไรบ้างจากการลงทุน?
+              1. คาดหวังอะไรบ้างจากการลงทุน
             </h2>
             <span className="text-xs sm:text-sm text-neutral-400 block mt-0.5">
               (เลือกได้มากกว่า 1 ข้อ)
@@ -254,10 +254,10 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
       >
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-white">
-            2. ในมุมมองของคุณ ให้ความสำคัญกับเรื่องใดมากที่สุด?
+            2. เรื่องไหนสำคัญกับคุณมากที่สุด
           </h2>
           <span className="text-xs sm:text-sm text-[#d4af37] block mt-0.5 font-medium">
-            (เรียงลำดับจากข้อ 1 โดยอันดับ 1 = สำคัญที่สุด)
+            อันดับ 1 คือสิ่งที่สำคัญที่สุดสำหรับคุณ
           </span>
         </div>
 
@@ -284,7 +284,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white">
-              3. สินทรัพย์ไหนที่ท่านสนใจ หรืออยากให้มีในพอร์ต?
+              3. สินทรัพย์ไหนที่สนใจ หรืออยากให้มีในพอร์ต
             </h2>
             <span className="text-xs sm:text-sm text-neutral-400 block mt-0.5">
               (เลือกได้มากกว่า 1 ข้อ)
@@ -342,13 +342,13 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
         {/* Clean Input Field */}
         <div className="mt-4 pt-4 border-t border-neutral-800/80">
           <label className="block text-sm font-medium text-neutral-300 mb-2">
-            สินทรัพย์อื่นๆ ที่สนใจ (ระบุเพิ่มเติม):
+            สินทรัพย์อื่นๆ ที่สนใจ
           </label>
           <input
             type="text"
             value={customAsset}
             onChange={(e) => setCustomAsset(e.target.value)}
-            placeholder="ระบุสินทรัพย์อื่นๆ..."
+            placeholder="ระบุสินทรัพย์อื่นๆ"
             className="w-full px-4 py-3 text-base bg-[#070e1c] border border-neutral-700/80 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 rounded-xl text-white placeholder:text-neutral-500 outline-none transition-all"
           />
         </div>
@@ -358,10 +358,10 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
       <div className="border border-neutral-800 bg-[#0b1424] rounded-2xl p-5 sm:p-7 space-y-3">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-white">
-            4. ทำไมถึงสนใจกลุ่มสินทรัพย์เหล่านี้?
+            4. ทำไมถึงสนใจกลุ่มสินทรัพย์เหล่านี้
           </h2>
           <span className="text-xs sm:text-sm text-neutral-400 block mt-0.5">
-            (ระบุเหตุผลหรือมุมมองของคุณ)
+            เล่าให้เราฟังสั้นๆ ได้เลย
           </span>
         </div>
 
@@ -369,7 +369,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
           rows={3}
           value={assetReason}
           onChange={(e) => setAssetReason(e.target.value)}
-          placeholder="แชร์เหตุผลหรือมุมมองของคุณสั้นๆ..."
+          placeholder="เล่าเหตุผลหรือมุมมองของคุณสั้นๆ"
           className="w-full px-4 py-3 text-base bg-[#070e1c] border border-neutral-700/80 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 rounded-xl text-white placeholder:text-neutral-500 outline-none resize-y transition-all leading-relaxed"
         />
       </div>
@@ -384,7 +384,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white">
-              5. ปัจจุบันใช้ App อะไรลงทุน?
+              5. ปัจจุบันใช้แอปอะไรลงทุน
             </h2>
             <span className="text-xs sm:text-sm text-neutral-400 block mt-0.5">
               (เลือกได้มากกว่า 1 ข้อ)
@@ -441,13 +441,13 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
 
         <div className="mt-4 pt-4 border-t border-neutral-800/80">
           <label className="block text-sm font-medium text-neutral-300 mb-2">
-            แอปหรือสถาบันการเงินอื่นๆ (ระบุเพิ่มเติม):
+            แอปหรือสถาบันการเงินอื่นๆ
           </label>
           <input
             type="text"
             value={customApp}
             onChange={(e) => setCustomApp(e.target.value)}
-            placeholder="ระบุแอปพลิเคชันหรือสถาบันการเงินอื่นๆ..."
+            placeholder="ระบุแอปหรือสถาบันการเงินอื่นๆ"
             className="w-full px-4 py-3 text-base bg-[#070e1c] border border-neutral-700/80 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 rounded-xl text-white placeholder:text-neutral-500 outline-none transition-all"
           />
         </div>
@@ -457,7 +457,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
       <div className="border border-neutral-800 bg-[#0b1424] rounded-2xl p-5 sm:p-7 space-y-3">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-white">
-            6. มีอะไรอยากจะบอกไหม? อยากให้เราซัพพอร์ตเรื่องอะไร?
+            6. มีอะไรอยากบอกเราไหม อยากให้ซัพพอร์ตเรื่องอะไร
           </h2>
         </div>
 
@@ -465,7 +465,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
           rows={3}
           value={supportMessage}
           onChange={(e) => setSupportMessage(e.target.value)}
-          placeholder="พิมพ์ข้อความของคุณที่นี่..."
+          placeholder="เขียนถึงเราได้เลย"
           className="w-full px-4 py-3 text-base bg-[#070e1c] border border-neutral-700/80 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 rounded-xl text-white placeholder:text-neutral-500 outline-none resize-y transition-all leading-relaxed"
         />
       </div>
@@ -480,7 +480,7 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white">
-              7. ปกติดื่มอะไรในงานมีตติ้ง / สังสรรค์?
+              7. ปกติดื่มอะไรในงานมีตติ้งหรืองานสังสรรค์
             </h2>
             <span className="text-xs sm:text-sm text-neutral-400 block mt-0.5">
               (เลือกได้มากกว่า 1 ข้อ)
@@ -544,36 +544,27 @@ export const SurveyForm: FC<SurveyFormProps> = ({ onSubmit, isSubmitting }) => {
 
         <div className="mt-4 pt-4 border-t border-neutral-800/80">
           <label className="block text-sm font-medium text-neutral-300 mb-2">
-            เครื่องดื่มอื่นๆ ที่ชอบ (ระบุเพิ่มเติม):
+            เครื่องดื่มอื่นๆ ที่ชอบ
           </label>
           <input
             type="text"
             value={customDrink}
             onChange={(e) => setCustomDrink(e.target.value)}
-            placeholder="ระบุเครื่องดื่มอื่นๆ..."
+            placeholder="ระบุเครื่องดื่มอื่นๆ"
             className="w-full px-4 py-3 text-base bg-[#070e1c] border border-neutral-700/80 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 rounded-xl text-white placeholder:text-neutral-500 outline-none transition-all"
           />
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="border border-neutral-800 bg-[#0b1424] rounded-2xl p-5 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-bold text-white">
-            พร้อมส่งแบบสำรวจ
-          </h3>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5">
-            ตรวจเช็กคำตอบและแตะปุ่มเพื่อยืนยัน
-          </p>
-        </div>
-
+      <div className="pt-2">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-base bg-[#d4af37] hover:bg-[#e6c875] text-neutral-950 transition-colors flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer shadow-sm"
+          className="w-full px-8 py-3.5 rounded-xl font-bold text-base bg-[#d4af37] hover:bg-[#e6c875] text-neutral-950 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
         >
           {isSubmitting ? (
-            <span>กำลังส่งข้อมูล...</span>
+            <span>กำลังส่งข้อมูล</span>
           ) : (
             <>
               <span>ส่งแบบสำรวจ</span>

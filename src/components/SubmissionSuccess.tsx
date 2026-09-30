@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Crown, CheckCircle2, RotateCcw, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Check, CheckCircle2, RotateCcw, ExternalLink, AlertTriangle } from 'lucide-react';
 
 interface SubmissionSuccessProps {
   onReset: () => void;
@@ -17,7 +17,7 @@ export const SubmissionSuccess: FC<SubmissionSuccessProps> = ({
       <div className="rounded-2xl border border-neutral-800 bg-[#0b1424] p-8 sm:p-12 text-center shadow-xl">
         {/* Crown Crest */}
         <div className="w-16 h-16 rounded-2xl bg-[#0e1b30] border border-[#d4af37]/60 text-[#d4af37] flex items-center justify-center mx-auto mb-5 shadow-sm">
-          <Crown className="w-8 h-8" />
+          <Check className="w-8 h-8" />
         </div>
 
         <div className="space-y-3">
@@ -26,7 +26,7 @@ export const SubmissionSuccess: FC<SubmissionSuccessProps> = ({
           </h1>
 
           <p className="text-base sm:text-lg text-neutral-300 max-w-md mx-auto font-normal leading-relaxed">
-            ขอบคุณสำหรับข้อมูลและการมีส่วนร่วม
+            ขอบคุณที่สละเวลาตอบแบบสำรวจ แล้วเจอกันที่ InvestNow Circle
           </p>
 
           {syncError && (
@@ -63,7 +63,7 @@ export const SubmissionSuccess: FC<SubmissionSuccessProps> = ({
             className="inline-flex items-center gap-2 text-sm sm:text-base font-medium text-[#d4af37] hover:text-[#f3e5ab] py-2 px-4 rounded-xl hover:bg-neutral-800/60 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>ส่งคำตอบอีกครั้ง หรือแก้ไขข้อมูล</span>
+            <span>ตอบแบบสำรวจอีกครั้ง</span>
           </button>
         </div>
       </div>

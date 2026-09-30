@@ -315,7 +315,7 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
                 disabled={isConnectingGoogle}
                 className="px-4 py-2 text-xs font-semibold bg-[#d4af37] text-neutral-950 rounded-lg hover:bg-[#e6c875] transition-all disabled:opacity-50"
               >
-                {isConnectingGoogle ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google'}
+                {isConnectingGoogle ? 'กำลังเข้าสู่ระบบ' : 'เข้าสู่ระบบด้วย Google'}
               </button>
             )}
             {user && (
@@ -340,7 +340,7 @@ export const AdminSettings: FC<AdminSettingsProps> = ({
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
                   ยังล็อกอินอยู่ แต่สิทธิ์เข้าถึง Google Sheets หมดอายุเมื่อรีเฟรชหน้า
-                  กด &ldquo;เข้าสู่ระบบด้วย Google&rdquo; อีกครั้งเพื่อเชื่อมต่อใหม่
+                  กดเข้าสู่ระบบด้วย Google อีกครั้งเพื่อเชื่อมต่อใหม่
                 </span>
               </div>
             )}

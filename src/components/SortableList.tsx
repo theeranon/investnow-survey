@@ -59,7 +59,7 @@ export const SortableList: FC<SortableListProps> = ({ items, onChange }) => {
     return (
       <div className="py-5 px-4 bg-[#0a1324] border border-dashed border-neutral-700 rounded-xl text-center">
         <p className="text-sm sm:text-base text-neutral-400">
-          (โปรดเลือกความคาดหวังในข้อ 1 ด้านบนก่อน รายการจะปรากฏให้จัดอันดับที่นี่)
+          เลือกความคาดหวังในข้อ 1 ก่อน แล้วมาจัดลำดับที่นี่
         </p>
       </div>
     );
@@ -68,9 +68,9 @@ export const SortableList: FC<SortableListProps> = ({ items, onChange }) => {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between text-xs sm:text-sm text-[#d4af37] px-1 font-medium">
-        <span>ลากสลับตำแหน่ง หรือแตะปุ่มลูกศรเพื่อเลื่อนอันดับ</span>
+        <span>ลากสลับตำแหน่ง หรือกดลูกศรเพื่อเลื่อนอันดับ</span>
         <span className="font-mono text-neutral-300 tabular-nums">
-          {items.length} รายการ
+          {items.length} ข้อ
         </span>
       </div>
 
