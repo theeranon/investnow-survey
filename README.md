@@ -20,15 +20,14 @@
 
 https://investnow-circle.netlify.app/results.html
 
-Netlify API token อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น หน้าเว็บส่งแค่รหัสผ่านไปให้
-`netlify/functions/results.ts` ตรวจ แล้วฟังก์ชันเป็นคนไปอ่านคำตอบมาให้
+`netlify/functions/submission-created.ts` เก็บสำเนาคำตอบไว้ใน Netlify Blobs
+ทุกครั้งที่มีคนส่งฟอร์ม และหน้านี้อ่านจากตรงนั้น Blobs ถูกตั้งค่าให้โดย runtime
+จึงไม่ต้องใช้ token หรือ credential ใดๆ
 
-ต้องตั้ง environment variable 2 ตัวบน Netlify
+รหัสผ่านอยู่ที่ environment variable `RESULTS_PASSPHRASE`
 
-| Key | ค่า |
-|---|---|
-| `RESULTS_PASSPHRASE` | รหัสผ่านสำหรับเปิดหน้านี้ |
-| `NETLIFY_API_TOKEN` | personal access token จาก Netlify (User settings → Applications) |
+ถ้าตั้ง `NETLIFY_API_TOKEN` เพิ่ม หน้านี้จะอ่านจาก Netlify Forms API แทน ซึ่งครอบคลุม
+คำตอบที่ส่งเข้ามาก่อนฟังก์ชันนี้จะมีอยู่ด้วย
 
 ## ส่งต่อเข้า Google Sheet (ทางเลือก)
 
