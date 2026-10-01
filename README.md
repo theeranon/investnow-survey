@@ -13,6 +13,23 @@
 ฟอร์ม static ที่ Netlify ใช้ detect อยู่ใน `index.html` (ซ่อนจากผู้ใช้) ชื่อฟิลด์ต้องตรงกับ
 `FORM_FIELDS` ใน `src/services/netlifyForms.ts` เสมอ
 
+## หน้าดูคำตอบ (ลับ)
+
+`/results.html` เป็นหน้าสำหรับทีมงาน ไม่มีลิงก์จากหน้าแบบสำรวจและตั้ง `noindex` ไว้
+เปิดด้วยรหัสผ่าน แล้วดูคำตอบทั้งหมดเป็นตาราง พร้อมปุ่มดาวน์โหลด CSV
+
+https://investnow-circle.netlify.app/results.html
+
+Netlify API token อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น หน้าเว็บส่งแค่รหัสผ่านไปให้
+`netlify/functions/results.ts` ตรวจ แล้วฟังก์ชันเป็นคนไปอ่านคำตอบมาให้
+
+ต้องตั้ง environment variable 2 ตัวบน Netlify
+
+| Key | ค่า |
+|---|---|
+| `RESULTS_PASSPHRASE` | รหัสผ่านสำหรับเปิดหน้านี้ |
+| `NETLIFY_API_TOKEN` | personal access token จาก Netlify (User settings → Applications) |
+
 ## ส่งต่อเข้า Google Sheet (ทางเลือก)
 
 `netlify/functions/submission-created.ts` ทำงานอัตโนมัติทุกครั้งที่มีคนส่งฟอร์ม

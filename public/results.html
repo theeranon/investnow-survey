@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>InvestNow&trade; Circle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #070b14;
+        --surface: #0b1424;
+        --sunken: #070e1c;
+        --line: #1e293b;
+        --text: #e8ecf4;
+        --muted: #94a3b8;
+        --dim: #64748b;
+        --gold: #d4af37;
+        --danger: #fb7185;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+        line-height: 1.4;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1240px; margin: 0 auto; padding: 32px 16px 64px; }
+      h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+      .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+      .gate { max-width: 360px; margin: 14vh auto; }
+      label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+      input {
+        width: 100%; padding: 9px 12px; font: inherit; font-size: 15px;
+        background: var(--sunken); color: var(--text);
+        border: 1px solid #334155; border-radius: 6px;
+      }
+      input:focus-visible, button:focus-visible {
+        outline: 2px solid var(--gold); outline-offset: 2px;
+      }
+      button {
+        font: inherit; font-weight: 600; cursor: pointer;
+        border-radius: 6px; border: 1px solid transparent;
+        padding: 9px 16px; min-height: 36px;
+        transition: background-color 180ms ease-out;
+      }
+      .primary { background: var(--gold); color: #0b0b0b; width: 100%; margin-top: 12px; }
+      .primary:hover { background: #e6c875; }
+      .ghost {
+        background: var(--sunken); color: var(--text); border-color: #334155;
+        padding: 7px 12px; font-size: 13px; font-weight: 500;
+      }
+      .ghost:hover { background: #111f36; }
+      .error { color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+      .bar {
+        display: flex; align-items: flex-end; justify-content: space-between;
+        gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+      }
+      .stats { display: flex; gap: 28px; margin: 18px 0; flex-wrap: wrap; }
+      .stat .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .stat .k { font-size: 12px; color: var(--dim); }
+
+      .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
+      table { border-collapse: collapse; width: 100%; font-size: 13px; }
+      th, td {
+        text-align: left; padding: 8px 12px;
+        border-bottom: 1px solid var(--line); vertical-align: top;
+        line-height: 1.3;
+      }
+      th {
+        background: var(--sunken); color: var(--gold);
+        font-weight: 600; font-size: 12px; white-space: nowrap;
+        position: sticky; top: 0;
+      }
+      tbody tr:hover { background: #0e1829; }
+      td.when { color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+      td.wide { min-width: 260px; }
+      .empty { color: var(--muted); padding: 40px 0; text-align: center; font-size: 14px; }
+
+      @media (pointer: coarse) {
+        button { min-height: 44px; }
+        input { min-height: 44px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="gate" id="gate">
+        <h1>InvestNow&trade; Circle</h1>
+        <p class="sub">คำตอบแบบสำรวจ</p>
+        <div style="margin-top: 20px">
+          <label for="pass">รหัสผ่าน</label>
+          <input id="pass" type="password" autocomplete="current-password" />
+          <button class="primary" id="go">เปิดดูคำตอบ</button>
+          <p class="error" id="err"></p>
+        </div>
+      </section>
+
+      <section id="panel" hidden>
+        <div class="bar">
+          <div>
+            <h1>InvestNow&trade; Circle</h1>
+            <p class="sub">คำตอบแบบสำรวจ</p>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button class="ghost" id="refresh">โหลดใหม่</button>
+            <button class="ghost" id="csv">ดาวน์โหลด CSV</button>
+          </div>
+        </div>
+
+        <div class="stats" id="stats"></div>
+        <div class="scroll"><table id="table"></table></div>
+      </section>
+    </div>
+
+    <script>
+      const COLUMNS = [
+        ['when', 'เวลา'],
+        ['name', 'ชื่อ'],
+        ['contact', 'ติดต่อ'],
+        ['ranking', 'ลำดับความคาดหวัง'],
+        ['assets', 'สินทรัพย์ที่สนใจ'],
+        ['asset_reason', 'เหตุผล'],
+        ['apps', 'แอปที่ใช้'],
+        ['support_message', 'อยากให้ซัพพอร์ต'],
+        ['drinks', 'เครื่องดื่ม'],
+      ];
+      const WIDE = new Set(['ranking', 'assets', 'asset_reason', 'support_message']);
+
+      let rows = [];
+      let passphrase = '';
+
+      const el = (id) => document.getElementById(id);
+      const fmt = (iso) =>
+        new Date(iso).toLocaleString('th-TH', {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+        });
+
+      async function load() {
+        const res = await fetch('/.netlify/functions/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passphrase }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'เปิดดูไม่สำเร็จ');
+        rows = body.rows || [];
+      }
+
+      function render() {
+        const counted = (key) => {
+          const tally = new Map();
+          rows.forEach((r) =>
+            String(r[key] || '')
+              .split(', ')
+              .map((v) => v.trim())
+              .filter(Boolean)
+              .forEach((v) => tally.set(v, (tally.get(v) || 0) + 1))
+          );
+          return [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+        };
+
+        const topGoal = counted('expectations');
+        const topAsset = counted('assets');
+        el('stats').innerHTML = [
+          ['คำตอบทั้งหมด', rows.length],
+          ['เป้าหมายที่ถูกเลือกมากที่สุด', topGoal ? topGoal[0] : '-'],
+          ['สินทรัพย์ที่ถูกเลือกมากที่สุด', topAsset ? topAsset[0] : '-'],
+        ]
+          .map(
+            ([k, n]) =>
+              `<div class="stat"><div class="n">${escape(String(n))}</div><div class="k">${k}</div></div>`
+          )
+          .join('');
+
+        if (!rows.length) {
+          el('table').innerHTML = '';
+          el('table').insertAdjacentHTML('afterend', '');
+          document.querySelector('.scroll').innerHTML =
+            '<p class="empty">ยังไม่มีคำตอบเข้ามา</p>';
+          return;
+        }
+
+        const head = COLUMNS.map(([, label]) => `<th>${label}</th>`).join('');
+        const body = rows
+          .map((r) => {
+            const cells = COLUMNS.map(([key]) => {
+              if (key === 'when') return `<td class="when">${fmt(r.created_at)}</td>`;
+              const cls = WIDE.has(key) ? ' class="wide"' : '';
+              return `<td${cls}>${escape(r[key] || '')}</td>`;
+            }).join('');
+            return `<tr>${cells}</tr>`;
+          })
+          .join('');
+        document.querySelector('.scroll').innerHTML =
+          `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+      }
+
+      function escape(s) {
+        return String(s).replace(/[&<>"']/g, (c) =>
+          ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+        );
+      }
+
+      function downloadCsv() {
+        const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+        const header = ['เวลา', 'ชื่อ', 'ติดต่อ', 'ความคาดหวัง', 'ลำดับความคาดหวัง',
+          'สินทรัพย์', 'เหตุผล', 'แอปที่ใช้', 'อยากให้ซัพพอร์ต', 'เครื่องดื่ม'];
+        const keys = ['created_at', 'name', 'contact', 'expectations', 'ranking',
+          'assets', 'asset_reason', 'apps', 'support_message', 'drinks'];
+        const csv =
+          '﻿' +
+          [header.map(q).join(','), ...rows.map((r) => keys.map((k) => q(r[k])).join(','))].join('\r\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `investnow-circle-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      el('go').addEventListener('click', async () => {
+        passphrase = el('pass').value;
+        el('err').textContent = '';
+        try {
+          await load();
+          el('gate').hidden = true;
+          el('panel').hidden = false;
+          render();
+        } catch (e) {
+          el('err').textContent = e.message;
+        }
+      });
+      el('pass').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') el('go').click();
+      });
+      el('refresh').addEventListener('click', async () => {
+        await load();
+        render();
+      });
+      el('csv').addEventListener('click', downloadCsv);
+    </script>
+  </body>
+</html>
