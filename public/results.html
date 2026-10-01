@@ -211,7 +211,7 @@
         const body = rows
           .map((r) => {
             const cells = COLUMNS.map(([key]) => {
-              if (key === 'when') return `<td class="when">${fmt(r.created_at)}</td>`;
+              if (key === 'when') return `<td class="when">${escape(r.timestamp || fmt(r.created_at))}</td>`;
               if (key === 'remove') {
                 return `<td><button class="ghost del" data-key="${escape(r._key || '')}" data-who="${escape(r.name || '')}">ลบ</button></td>`;
               }
