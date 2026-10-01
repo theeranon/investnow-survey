@@ -29,14 +29,23 @@ async function readFromApi(token: string): Promise<Row[]> {
 
   const submissions = await res.json();
   return (Array.isArray(submissions) ? submissions : []).map(
-    (s: { created_at: string; data?: Row }) => ({ created_at: s.created_at, ...(s.data || {}) })
+    (s: { id: string; created_at: string; data?: Row }) => ({
+      created_at: s.created_at,
+      ...(s.data || {}),
+      _key: s.id,
+    })
   );
 }
 
 async function readFromStore(): Promise<Row[]> {
   const store = getStore(STORE_NAME);
   const { blobs } = await store.list();
-  const rows = await Promise.all(blobs.map((b) => store.get(b.key, { type: 'json' })));
+  const rows = await Promise.all(
+    blobs.map(async (b) => {
+      const row = await store.get(b.key, { type: 'json' });
+      return row ? { ...(row as Row), _key: b.key } : null;
+    })
+  );
   return rows.filter(Boolean) as Row[];
 }
 
@@ -46,15 +55,36 @@ export default async (req: Request): Promise<Response> => {
   const expected = process.env.RESULTS_PASSPHRASE;
   if (!expected) return json({ error: 'ยังไม่ได้ตั้งรหัสผ่านสำหรับหน้านี้' }, 503);
 
-  let passphrase = '';
+  let body: { passphrase?: string; action?: string; key?: string };
   try {
-    passphrase = String((await req.json())?.passphrase ?? '');
+    body = await req.json();
   } catch {
     return json({ error: 'bad request' }, 400);
   }
-  if (passphrase !== expected) return json({ error: 'รหัสผ่านไม่ถูกต้อง' }, 401);
+  if (String(body.passphrase ?? '') !== expected) {
+    return json({ error: 'รหัสผ่านไม่ถูกต้อง' }, 401);
+  }
 
   const token = process.env.NETLIFY_API_TOKEN;
+
+  // Lets the team drop a test or spam row; the passphrase already gates this.
+  if (body.action === 'delete') {
+    if (!body.key) return json({ error: 'missing key' }, 400);
+    try {
+      if (token) {
+        await fetch(`https://api.netlify.com/api/v1/submissions/${body.key}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await getStore(STORE_NAME).delete(body.key);
+      }
+      return json({ ok: true });
+    } catch (err) {
+      console.error('Failed to delete response:', err);
+      return json({ error: 'ลบไม่สำเร็จ' }, 502);
+    }
+  }
 
   try {
     const rows = token ? await readFromApi(token) : await readFromStore();
