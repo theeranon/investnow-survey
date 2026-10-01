@@ -1,17 +1,12 @@
 import { FC } from 'react';
-import { Check, CheckCircle2, RotateCcw, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Check, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface SubmissionSuccessProps {
   onReset: () => void;
-  spreadsheetUrl: string | null;
-  syncError?: string | null;
+  submitError?: string | null;
 }
 
-export const SubmissionSuccess: FC<SubmissionSuccessProps> = ({
-  onReset,
-  spreadsheetUrl,
-  syncError,
-}) => {
+export const SubmissionSuccess: FC<SubmissionSuccessProps> = ({ onReset, submitError }) => {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pt-6 sm:pt-12 pb-28 px-3">
       <div className="rounded-2xl border border-neutral-800 bg-[#0b1424] p-8 sm:p-12 text-center shadow-xl">
@@ -29,30 +24,14 @@ export const SubmissionSuccess: FC<SubmissionSuccessProps> = ({
             ขอบคุณที่สละเวลาตอบแบบสำรวจ แล้วเจอกันที่ InvestNow Circle
           </p>
 
-          {syncError && (
+          {submitError && (
             <div className="pt-2 text-left max-w-md mx-auto">
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-200 text-sm">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
                 <span>
-                  คำตอบถูกบันทึกไว้แล้ว แต่ยังส่งขึ้น Google Sheet ไม่สำเร็จ ({syncError})
-                  กรุณาแจ้งผู้ดูแลระบบให้ซิงค์ข้อมูลย้อนหลัง
+                  ส่งคำตอบไม่สำเร็จ กรุณาลองส่งอีกครั้ง หรือแจ้งทีมงานได้เลย
                 </span>
               </div>
-            </div>
-          )}
-
-          {spreadsheetUrl && !syncError && (
-            <div className="pt-3">
-              <a
-                href={spreadsheetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm sm:text-base text-emerald-400 bg-[#044337]/50 border border-emerald-600/50 px-4 py-2 rounded-xl hover:bg-[#044337] transition-all font-medium"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>เปิดดูใน Google Sheet</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
             </div>
           )}
         </div>

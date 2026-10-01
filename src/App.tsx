@@ -3,150 +3,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import { User } from 'firebase/auth';
+import { useState } from 'react';
 import { SurveyForm } from './components/SurveyForm';
 import { SubmissionSuccess } from './components/SubmissionSuccess';
-import { AdminSettings } from './components/AdminSettings';
 import { SurveyResponse } from './types/survey';
-import { initAuth, googleSignIn, logout, getAccessToken } from './services/firebaseAuth';
-import { appendSurveyRow } from './services/googleSheets';
-import { getWebhookUrl, submitViaWebhook } from './services/sheetWebhook';
 import { submitToNetlifyForms } from './services/netlifyForms';
 
-const STORAGE_KEY_RESPONSES = 'executive_survey_responses_v3';
-const STORAGE_KEY_SHEET_ID = 'executive_survey_sheet_id_v3';
-const STORAGE_KEY_SHEET_URL = 'executive_survey_sheet_url_v3';
-
 export default function App() {
-  // The admin screen has no visible entry point; open it with the #admin hash.
-  const [currentView, setCurrentView] = useState<'form' | 'success' | 'settings'>(() =>
-    window.location.hash === '#admin' ? 'settings' : 'form'
-  );
-
-  const [responses, setResponses] = useState<SurveyResponse[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_RESPONSES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return [];
-  });
-
-  // Google OAuth & Sheets State
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [spreadsheetId, setSpreadsheetId] = useState<string | null>(() => {
-    return localStorage.getItem(STORAGE_KEY_SHEET_ID) || null;
-  });
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(() => {
-    return localStorage.getItem(STORAGE_KEY_SHEET_URL) || null;
-  });
-
-  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [currentView, setCurrentView] = useState<'form' | 'success'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Null means "reached the sheet"; a string is shown to the respondent as a warning.
-  const [syncError, setSyncError] = useState<string | null>(null);
-
-  // Initialize Firebase Auth
-  useEffect(() => {
-    const unsubscribe = initAuth((currentUser, token) => {
-      setUser(currentUser);
-      setAccessToken(token);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Save responses to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_RESPONSES, JSON.stringify(responses));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [responses]);
-
-  const handleConnectGoogle = async () => {
-    setIsConnectingGoogle(true);
-    try {
-      const res = await googleSignIn();
-      if (res) {
-        setUser(res.user);
-        setAccessToken(res.accessToken);
-      }
-    } catch (err) {
-      console.error('Google Sign In failed:', err);
-    } finally {
-      setIsConnectingGoogle(false);
-    }
-  };
-
-  const handleDisconnectGoogle = async () => {
-    await logout();
-    setUser(null);
-    setAccessToken(null);
-  };
-
-  const handleSetSpreadsheet = (id: string, url: string) => {
-    setSpreadsheetId(id);
-    setSpreadsheetUrl(url);
-    localStorage.setItem(STORAGE_KEY_SHEET_ID, id);
-    localStorage.setItem(STORAGE_KEY_SHEET_URL, url);
-  };
+  // Null means the submission was accepted; a string is shown to the respondent.
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleFormSubmit = async (newResponse: SurveyResponse) => {
     setIsSubmitting(true);
-    setSyncError(null);
+    setSubmitError(null);
 
-    // Netlify Forms is the primary store: it needs no respondent sign-in and no
-    // third-party credentials, so it is the one path that always works in
-    // production. The Google Sheet paths run as best-effort extras on top.
-    const currentToken = accessToken || (await getAccessToken());
-    const hasWebhook = Boolean(getWebhookUrl());
-    const canUseOAuth = Boolean(currentToken && spreadsheetId);
-
-    let stored = false;
     try {
       await submitToNetlifyForms(newResponse);
-      stored = true;
     } catch (err) {
-      console.error('Failed to submit to Netlify Forms:', err);
+      console.error('Failed to submit survey:', err);
+      setSubmitError(
+        err instanceof Error ? err.message : 'ส่งคำตอบไม่สำเร็จ'
+      );
     }
 
-    if (hasWebhook) {
-      try {
-        await submitViaWebhook(newResponse);
-        stored = true;
-      } catch (err) {
-        console.error('Failed to submit via webhook:', err);
-      }
-    } else if (canUseOAuth) {
-      try {
-        await appendSurveyRow(currentToken!, spreadsheetId!, newResponse);
-        stored = true;
-      } catch (err) {
-        console.error('Failed to append to Google Sheet:', err);
-      }
-    }
-
-    if (!stored) {
-      setSyncError('ส่งข้อมูลขึ้นเซิร์ฟเวอร์ไม่สำเร็จ คำตอบถูกเก็บไว้ในเครื่องนี้ก่อน');
-    }
-
-    setResponses((prev) => [newResponse, ...prev]);
     setIsSubmitting(false);
     setCurrentView('success');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleClearResponses = () => {
-    if (window.confirm('คุณต้องการลบข้อมูลการตอบกลับทั้งหมดใช่หรือไม่?')) {
-      setResponses([]);
-    }
   };
 
   return (
@@ -159,10 +43,7 @@ export default function App() {
 
       <main className="flex-1 px-4 sm:px-6 pt-8 sm:pt-12 relative z-10">
         {currentView === 'form' && (
-          <SurveyForm
-            onSubmit={handleFormSubmit}
-            isSubmitting={isSubmitting}
-          />
+          <SurveyForm onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
         )}
 
         {currentView === 'success' && (
@@ -171,28 +52,10 @@ export default function App() {
               setCurrentView('form');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            spreadsheetUrl={spreadsheetUrl}
-            syncError={syncError}
-          />
-        )}
-
-        {currentView === 'settings' && (
-          <AdminSettings
-            onBack={() => setCurrentView('form')}
-            user={user}
-            accessToken={accessToken}
-            spreadsheetId={spreadsheetId}
-            spreadsheetUrl={spreadsheetUrl}
-            onSetSpreadsheet={handleSetSpreadsheet}
-            onConnectGoogle={handleConnectGoogle}
-            onDisconnectGoogle={handleDisconnectGoogle}
-            isConnectingGoogle={isConnectingGoogle}
-            responses={responses}
-            onClearResponses={handleClearResponses}
+            submitError={submitError}
           />
         )}
       </main>
-
     </div>
   );
 }

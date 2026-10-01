@@ -1,50 +1,41 @@
-# InvestNow Survey
+# InvestNow™ Circle
 
 แบบสำรวจเป้าหมายและสไตล์การลงทุน — React + Vite + Tailwind, deploy เป็น static site บน Netlify
 
-## ที่เก็บคำตอบ
+เว็บจริง: https://investnow-circle.netlify.app
 
-### Netlify Forms (ใช้งานจริงอยู่ตอนนี้)
+## คำตอบเก็บที่ไหน
 
-คำตอบทุกชุดถูกส่งเข้า Netlify Forms ในฟอร์มชื่อ `survey` — ไม่ต้องให้ผู้ตอบล็อกอิน
-และไม่ต้องถือ credential ของบริการภายนอก ดูข้อมูล / export CSV / ตั้งอีเมลแจ้งเตือนได้ที่
-Netlify → **Forms**
+คำตอบทุกชุดเข้า **Netlify Forms** ในฟอร์มชื่อ `survey` ผู้ตอบไม่ต้องล็อกอิน
+และไม่มี credential ของบริการภายนอกอยู่ในหน้าเว็บเลย ดูข้อมูล export CSV
+และตั้งอีเมลแจ้งเตือนได้ที่ Netlify → **Forms**
 
-ฟอร์ม static ที่ Netlify ใช้ detect อยู่ใน `index.html` (ซ่อนไว้จากผู้ใช้) และชื่อฟิลด์
-ต้องตรงกับ `FORM_FIELDS` ใน `src/services/netlifyForms.ts` เสมอ
+ฟอร์ม static ที่ Netlify ใช้ detect อยู่ใน `index.html` (ซ่อนจากผู้ใช้) ชื่อฟิลด์ต้องตรงกับ
+`FORM_FIELDS` ใน `src/services/netlifyForms.ts` เสมอ
 
-## การเชื่อมต่อ Google Sheet (ทางเสริม)
+## ส่งต่อเข้า Google Sheet (ทางเลือก)
 
-แอปนี้เป็น static site ฉะนั้นการเขียนลง Google Sheet ต้องมีฝ่ายใดฝ่ายหนึ่งถือสิทธิ์ มี 2 เส้นทางในโค้ด:
+`netlify/functions/submission-created.ts` ทำงานอัตโนมัติทุกครั้งที่มีคนส่งฟอร์ม
+แล้วเขียนแถวลง Google Sheet ให้ เบราว์เซอร์ไม่ได้คุยกับ Google เลย การยืนยันตัวตน
+เป็นแบบ server to server ด้วย service account จึงไม่ติดนโยบายของ Google Workspace
+ที่ห้าม publish Apps Script web app สู่สาธารณะ
 
-### 1. Apps Script Web App (เส้นทางหลัก — ใช้กับผู้ตอบทุกคน)
+ถ้าไม่ตั้ง environment variable ฟังก์ชันจะข้ามไปเฉยๆ คำตอบยังอยู่ครบใน Netlify Forms
 
-ผู้ตอบไม่ต้องล็อกอิน Google เลย คำตอบถูกส่งไปที่ Web App ซึ่งรันด้วยสิทธิ์ของเจ้าของ Sheet
+วิธีเปิดใช้งาน
 
-1. เปิด Google Sheet ที่จะเก็บคำตอบ → **Extensions → Apps Script**
-2. ลบโค้ดเดิม แล้ววางโค้ดจาก [`apps-script/Code.gs`](apps-script/Code.gs)
-3. **Deploy → New deployment → Web app**
-4. ตั้ง **Execute as: Me** และ **Who has access: Anyone**
-   (ถ้าเลือก *Anyone with Google account* จะใช้ไม่ได้ เพราะผู้ตอบไม่ได้ล็อกอิน)
-5. Deploy → อนุญาตสิทธิ์ → copy **Web app URL** (`https://script.google.com/macros/s/.../exec`)
-6. นำ URL ไปตั้งเป็น environment variable บน Netlify:
-   `VITE_SHEET_WEBHOOK_URL` แล้ว redeploy
+1. Google Cloud Console → สร้าง **service account** → **Keys → Add key → JSON**
+2. เปิด **Google Sheets API** ในโปรเจกต์นั้น
+3. แชร์ Google Sheet ปลายทางให้อีเมลของ service account เป็น **Editor**
+4. Netlify → **Environment variables** ใส่ 3 ตัว
 
-> ค่านี้ถูกฝังใน client bundle ตอน build จึงถือเป็นข้อมูลสาธารณะ — endpoint ทำได้แค่ append แถวเท่านั้น
->
-> ระหว่างทดสอบ สามารถวาง URL ในหน้า **ตั้งค่า Google Sheets (ผู้ดูแล)** แล้วกด "ทดสอบการเชื่อมต่อ" ได้
-> แต่ค่าที่ตั้งจากหน้านั้นเก็บใน localStorage จึงมีผลกับเบราว์เซอร์นั้นเครื่องเดียว
+   | Key | ค่า |
+   |---|---|
+   | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | `client_email` จากไฟล์ JSON |
+   | `GOOGLE_PRIVATE_KEY` | `private_key` จากไฟล์ JSON ทั้งก้อน |
+   | `GOOGLE_SHEET_ID` | รหัสใน URL ของ Sheet |
 
-### 2. OAuth ของผู้ดูแล (สำรอง — เฉพาะแท็บของ admin)
-
-หน้า Admin ยังสร้าง / เชื่อม Sheet ด้วยบัญชี Google ของผู้ดูแลได้ และใช้ปุ่ม
-"ซิงค์ข้อมูลย้อนหลัง" ดันคำตอบที่ค้างใน localStorage ขึ้น Sheet ได้
-
-ข้อจำกัดที่ต้องรู้: Google คืน access token เฉพาะตอนล็อกอินผ่าน popup และไม่ถูกเก็บลง disk
-ฉะนั้น **รีเฟรชหน้า = ต้องกดเชื่อมต่อใหม่** เส้นทางนี้จึงใช้แทนข้อ 1 ไม่ได้
-
-ถ้าใช้เส้นทางนี้ ต้องเพิ่มโดเมนของ Netlify ใน Firebase Console →
-**Authentication → Settings → Authorized domains** ไม่งั้นจะเจอ `auth/unauthorized-domain`
+5. สั่ง redeploy
 
 ## Development
 
@@ -55,16 +46,7 @@ npm run lint     # tsc --noEmit
 npm run build    # -> dist/
 ```
 
-## Deploy (Netlify)
+## Deploy
 
-`netlify.toml` กำหนด build command, publish directory และ SPA redirect ไว้แล้ว
-
-- **แนะนำ:** ต่อ repo นี้กับ Netlify site (Site configuration → Build & deploy → Link repository)
-  แล้วทุก push ที่ `main` จะ deploy อัตโนมัติ
-- **หรือ deploy ด้วย CLI:**
-  ```bash
-  npx netlify-cli login
-  npx netlify-cli deploy --prod --dir=dist
-  ```
-
-อย่าลืมตั้ง `VITE_SHEET_WEBHOOK_URL` ก่อน build ไม่งั้น bundle จะไม่มี endpoint ปลายทาง
+`netlify.toml` กำหนด build command, publish directory, functions directory และ SPA redirect ไว้แล้ว
+repo ต่อกับ Netlify อยู่ ทุก push ที่ `main` จะ deploy อัตโนมัติ
