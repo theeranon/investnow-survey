@@ -82,6 +82,12 @@
       .themes { font-size: 10.5px; margin-bottom: 7px; }
       .themes b { font-weight: 600; }
 
+      table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+      th, td { text-align: left; padding: 2.5px 6px 2.5px 0; border-bottom: 1px solid var(--hair); vertical-align: top; }
+      th { color: var(--dim); font-weight: 500; font-size: 9px; border-bottom: 1px solid var(--line); }
+      td.who { font-weight: 600; white-space: nowrap; }
+      td.c { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
       .foot {
         margin-top: 9px; padding-top: 6px; border-top: 1px solid var(--line);
         font-size: 9px; color: var(--dim); display: flex; justify-content: space-between;
@@ -218,6 +224,25 @@
 
         const latest = rows[0] ? rows[0].timestamp : '';
 
+        const topGoal = (r) => {
+          const m = String(r.ranking || '').split('>')[0].match(/^\s*1\.\s*(.+)$/);
+          return m ? m[1].trim() : '-';
+        };
+        const shorten = (text, max) => {
+          const t = String(text || '').replace(/\s+/g, ' ').trim();
+          return t.length > max ? t.slice(0, max - 1).trimEnd() + '…' : t || '-';
+        };
+        const roster = rows
+          .map(
+            (r) => `<tr>
+              <td class="who">${esc(shorten(r.name, 24))}</td>
+              <td class="c">${esc(r.contact || '-')}</td>
+              <td>${esc(shorten(topGoal(r), 40))}</td>
+              <td>${esc(shorten(String(r.assets || '').replace(/อื่นๆ: /g, ''), 60))}</td>
+            </tr>`
+          )
+          .join('');
+
         el('sheet').innerHTML = `
           <div class="top">
             <h1>InvestNow&trade; Circle &mdash; สรุปผลแบบสำรวจ</h1>
@@ -258,6 +283,16 @@
             <h2>เครื่องดื่มในงานมีตติ้ง</h2>
             <p class="inline">${drinkLine}</p>
           </div>
+
+          <section>
+            <h2>ผู้ตอบแบบสำรวจ <span class="note">เรียงจากล่าสุด</span></h2>
+            <table>
+              <thead>
+                <tr><th>ชื่อ</th><th>ติดต่อ</th><th>เป้าหมายอันดับ 1</th><th>สินทรัพย์ที่สนใจ</th></tr>
+              </thead>
+              <tbody>${roster}</tbody>
+            </table>
+          </section>
 
           <div class="foot">
             <span>InvestNow&trade; Circle</span>
