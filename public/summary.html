@@ -153,8 +153,13 @@
             .forEach((v) => counts.set(v, (counts.get(v) || 0) + 1));
         });
         const out = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-        if (other) out.push(['อื่นๆ ที่ระบุเอง', other]);
-        return out;
+        return { listed: out, other };
+      }
+
+      /** Keeps the top entries but never drops the free-text bucket. */
+      function topWithOther({ listed, other }, limit) {
+        const head = listed.slice(0, other ? limit - 1 : limit);
+        return other ? [...head, ['อื่นๆ ที่ระบุเอง', other]] : head;
       }
 
       /** Borda-style score: an option scores more the higher a person ranked it. */
@@ -225,7 +230,7 @@
           )
           .join('');
 
-        const drinkLine = drinks
+        const drinkLine = topWithOther(drinks, 7)
           .map(([k, n]) => `<b>${esc(k)}</b> <span>${n}</span>`)
           .join(' &nbsp;·&nbsp; ');
 
@@ -241,8 +246,8 @@
           <div class="kpis">
             <div class="kpi"><div class="v n">${total}</div><div class="k">คำตอบ</div></div>
             <div class="kpi"><div class="v">${esc(ranked[0] ? ranked[0][0] : '-')}</div><div class="k">เป้าหมายที่กลุ่มให้น้ำหนักสูงสุด</div></div>
-            <div class="kpi"><div class="v">${esc(assets[0] ? assets[0][0] : '-')}</div><div class="k">สินทรัพย์ที่สนใจมากที่สุด</div></div>
-            <div class="kpi"><div class="v">${esc(apps[0] ? apps[0][0] : '-')}</div><div class="k">แอปที่ใช้มากที่สุด</div></div>
+            <div class="kpi"><div class="v">${esc(assets.listed[0] ? assets.listed[0][0] : '-')}</div><div class="k">สินทรัพย์ที่สนใจมากที่สุด</div></div>
+            <div class="kpi"><div class="v">${esc(apps.listed[0] ? apps.listed[0][0] : '-')}</div><div class="k">แอปที่ใช้มากที่สุด</div></div>
           </div>
 
           <div class="cols">
@@ -253,12 +258,12 @@
 
             <section>
               <h2>สินทรัพย์ที่สนใจ</h2>
-              ${bars(assets.slice(0, 9), people)}
+              ${bars(topWithOther(assets, 9), people)}
             </section>
 
             <section>
               <h2>แอปที่ใช้ลงทุน</h2>
-              ${bars(apps.slice(0, 6), people)}
+              ${bars(topWithOther(apps, 7), people)}
             </section>
 
             <section>
