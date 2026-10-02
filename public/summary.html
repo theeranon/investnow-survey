@@ -88,7 +88,8 @@
       th { color: var(--dim); font-weight: 500; font-size: 8.5px; border-bottom: 1px solid var(--line); }
       td.who { font-weight: 600; }
       td.who .c { display: block; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-      col.cName { width: 15%; } col.cGoal { width: 19%; } col.cWhy { width: 33%; } col.cNeed { width: 33%; }
+      col.cName { width: 15%; } col.cWhy { width: 46%; } col.cNeed { width: 39%; }
+      td .picks { display: block; font-weight: 600; margin-bottom: 1px; }
 
       .foot {
         margin-top: 9px; padding-top: 6px; border-top: 1px solid var(--line);
@@ -226,17 +227,14 @@
         const people = (n) => n + ' คน';
 
         const clean = (t) => String(t || '').replace(/\s+/g, ' ').trim();
-        const topGoal = (r) => {
-          const m = String(r.ranking || '').split('>')[0].match(/^\s*1\.\s*(.+)$/);
-          return m ? m[1].trim() : '';
-        };
-
         const roster = rows
           .map(
             (r) => `<tr>
               <td class="who">${esc(clean(r.name) || 'ไม่ระบุชื่อ')}<span class="c">${esc(clean(r.contact))}</span></td>
-              <td>${esc(topGoal(r))}</td>
-              <td>${esc(clean(r.asset_reason))}</td>
+              <td>
+                <span class="picks">${esc(clean(r.assets).replace(/อื่นๆ: /g, ''))}</span>
+                ${esc(clean(r.asset_reason))}
+              </td>
               <td>${esc(clean(r.support_message))}</td>
             </tr>`
           )
@@ -290,9 +288,9 @@
           <section>
             <h2>รายคน</h2>
             <table>
-              <colgroup><col class="cName" /><col class="cGoal" /><col class="cWhy" /><col class="cNeed" /></colgroup>
+              <colgroup><col class="cName" /><col class="cWhy" /><col class="cNeed" /></colgroup>
               <thead>
-                <tr><th>ผู้ตอบ</th><th>เป้าหมายอันดับ 1</th><th>ทำไมสนใจสินทรัพย์เหล่านี้</th><th>อยากให้ซัพพอร์ต</th></tr>
+                <tr><th>ผู้ตอบ</th><th>สินทรัพย์ที่เลือก และเหตุผล</th><th>อยากให้ซัพพอร์ต</th></tr>
               </thead>
               <tbody>${roster}</tbody>
             </table>
