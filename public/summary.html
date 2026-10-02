@@ -73,6 +73,8 @@
       .inline { font-size: 10.5px; color: var(--ink); }
       .inline b { font-weight: 600; }
       .inline span { color: var(--dim); }
+      .typed { font-size: 8.6px; line-height: 1.35; color: var(--muted); margin: 3px 0 0; }
+      .typed::first-line { color: var(--dim); }
 
       /* Quotes */
       .quotes { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 8px; }
@@ -140,26 +142,36 @@
       // so everything the respondent typed is pooled under one "อื่นๆ" entry.
       function tally(rows, key) {
         const counts = new Map();
-        let other = 0;
+        const typed = [];
         rows.forEach((r) => {
           const raw = String(r[key] || '');
           const otherAt = raw.indexOf('อื่นๆ:');
           const listed = otherAt === -1 ? raw : raw.slice(0, otherAt);
-          if (otherAt !== -1) other += 1;
+          // Everything after the marker is one person's free text, which may
+          // itself contain commas, so it is kept whole rather than split.
+          if (otherAt !== -1) {
+            const t = raw.slice(otherAt + 'อื่นๆ:'.length).replace(/\s+/g, ' ').trim();
+            if (t) typed.push(t);
+          }
           listed
             .split(', ')
             .map((v) => v.trim())
             .filter(Boolean)
             .forEach((v) => counts.set(v, (counts.get(v) || 0) + 1));
         });
-        const out = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-        return { listed: out, other };
+        return { listed: [...counts.entries()].sort((a, b) => b[1] - a[1]), typed };
       }
 
       /** Keeps the top entries but never drops the free-text bucket. */
-      function topWithOther({ listed, other }, limit) {
-        const head = listed.slice(0, other ? limit - 1 : limit);
-        return other ? [...head, ['อื่นๆ ที่ระบุเอง', other]] : head;
+      function topWithOther({ listed, typed }, limit) {
+        const head = listed.slice(0, typed.length ? limit - 1 : limit);
+        return typed.length ? [...head, ['ที่ระบุเอง', typed.length]] : head;
+      }
+
+      /** Spells out the free-text answers, so "ที่ระบุเอง 5" is not a dead end. */
+      function typedLine({ typed }) {
+        if (!typed.length) return '';
+        return `<p class="typed">ที่ระบุเอง &nbsp;${typed.map((t) => esc(t)).join(' &nbsp;·&nbsp; ')}</p>`;
       }
 
       /** Borda-style score: an option scores more the higher a person ranked it. */
@@ -259,16 +271,19 @@
             <section>
               <h2>สินทรัพย์ที่สนใจ</h2>
               ${bars(topWithOther(assets, 9), people)}
+              ${typedLine(assets)}
             </section>
 
             <section>
               <h2>แอปที่ใช้ลงทุน</h2>
               ${bars(topWithOther(apps, 7), people)}
+              ${typedLine(apps)}
             </section>
 
             <section>
               <h2>เครื่องดื่มในงานมีตติ้ง</h2>
               <p class="inline">${drinkLine}</p>
+              ${typedLine(drinks)}
             </section>
           </div>
 
